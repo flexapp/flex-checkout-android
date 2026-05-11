@@ -18,6 +18,6 @@ Then add the dependency to your `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.flexapp:flex-checkout-android:1.1.0")
+    implementation("com.github.flexapp:flex-checkout-android:1.1.1")
 }
 ```
