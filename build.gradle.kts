@@ -7,7 +7,7 @@ publishing {
         create<MavenPublication>("release") {
             groupId = "com.getflex.checkout"
             artifactId = "flex-checkout-android"
-            version = "1.5.4"
+            version = "1.5.5"
 
             artifact(file("libs/flex-checkout-android-release.aar")) {
                 extension = "aar"
