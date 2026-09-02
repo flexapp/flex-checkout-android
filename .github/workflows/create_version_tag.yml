@@ -1,0 +1,53 @@
+name: Create New Version Tag
+
+# When the build.gradle.kts version changes on main (via a propagation PR from
+# flex-checkout-android-core), create the matching tag. JitPack serves it.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'build.gradle.kts'
+
+permissions:
+  contents: write # the built-in GITHUB_TOKEN pushes the tag; nothing cascades off it
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so the tag points at the right commit
+
+      - name: Extract version from build.gradle.kts
+        id: get_version
+        run: |
+          VERSION=$(grep -E '^[[:space:]]*version[[:space:]]*=[[:space:]]*"' build.gradle.kts | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "Could not read version from build.gradle.kts" >&2
+            exit 1
+          fi
+          echo "TAG_VERSION=$VERSION" >> "$GITHUB_ENV" # bare semver, matching this repo's existing tags
+          echo "Detected version: $VERSION"
+
+      - name: Check if version tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "$TAG_VERSION" >/dev/null 2>&1; then
+            echo "Tag $TAG_VERSION already exists. Skipping."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag $TAG_VERSION does not exist. Creating it."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push tag
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG_VERSION"
+          git push origin "$TAG_VERSION"
